@@ -126,7 +126,7 @@ jobs:
           echo "dist=${dist}" >> "${GITHUB_OUTPUT}"
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Notepad++Mac-${{ steps.version.outputs.package_version }}-universal
           path: |
