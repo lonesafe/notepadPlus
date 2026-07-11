@@ -6,6 +6,7 @@
 
 #import "NppMacAppDelegate.h"
 #import "NppMacFileDropView.h"
+#import "NppMacPreferencesController.h"
 #import "NppMacRecoveryStore.h"
 #import "NppMacSessionStore.h"
 #import "NppMacLocalization.h"
@@ -76,7 +77,10 @@ int main() {
 		recoveredEntry.backupURL = backupURL;
 		[store saveEntries:@[entry(firstURL, 6, 2), entry(secondURL, 9, 4), recoveredEntry] activeIndex:2];
 
+		NppMacPreferencesController *viewPreferences =
+			[[NppMacPreferencesController alloc] initWithUserDefaults:defaults];
 		NppMacAppDelegate *delegate = [[NppMacAppDelegate alloc] init];
+		[delegate setValue:viewPreferences forKey:@"preferencesController"];
 		[delegate performSelector:@selector(createEditorWindow)];
 		[delegate setValue:store forKey:@"sessionStore"];
 		[delegate setValue:recoveryStore forKey:@"recoveryStore"];
@@ -107,6 +111,10 @@ int main() {
 		[(id<NppMacFileDropViewDelegate>)delegate fileDropView:dropView openFileURLs:@[droppedURL]];
 		require([[editor string] isEqualToString:@"opened from a window drop"],
 			"dropping a file into the editor window should open it as the active document");
+		[delegate performSelector:@selector(toggleWordWrap:) withObject:nil];
+		[delegate performSelector:@selector(toggleAlwaysOnTop:) withObject:nil];
+		require(viewPreferences.wrapLines && viewPreferences.alwaysOnTop,
+			"view menu commands should immediately persist their enabled state");
 
 		using SwitchDocumentFn = void (*)(id, SEL, NSUInteger);
 		reinterpret_cast<SwitchDocumentFn>(objc_msgSend)(delegate, @selector(switchToDocumentAtIndex:), 0);
@@ -130,12 +138,18 @@ int main() {
 			"snapshot should persist a recovery entry in the session");
 
 		NppMacAppDelegate *restoredDelegate = [[NppMacAppDelegate alloc] init];
+		NppMacPreferencesController *restoredViewPreferences =
+			[[NppMacPreferencesController alloc] initWithUserDefaults:defaults];
+		[restoredDelegate setValue:restoredViewPreferences forKey:@"preferencesController"];
 		[restoredDelegate performSelector:@selector(createEditorWindow)];
 		[restoredDelegate setValue:store forKey:@"sessionStore"];
 		[restoredDelegate setValue:recoveryStore forKey:@"recoveryStore"];
 		[restoredDelegate setValue:[NSMutableDictionary dictionary] forKey:@"snapshotTimers"];
 		[restoredDelegate performSelector:@selector(restoreSession)];
 		ScintillaView *restoredEditor = [restoredDelegate valueForKey:@"editor"];
+		NSWindow *restoredWindow = [restoredDelegate valueForKey:@"window"];
+		require([restoredEditor message:SCI_GETWRAPMODE] == SC_WRAP_WORD && restoredWindow.level == NSFloatingWindowLevel,
+			"a new app window should restore word wrap and always-on-top from preferences");
 		require([[restoredEditor string] isEqualToString:@"content captured before a crash"],
 			"a new app instance should restore the latest crash snapshot");
 		require([restoredEditor message:SCI_GETMODIFY] != 0,
@@ -143,7 +157,6 @@ int main() {
 
 		NSWindow *window = [delegate valueForKey:@"window"];
 		[window orderOut:nil];
-		NSWindow *restoredWindow = [restoredDelegate valueForKey:@"window"];
 		[restoredWindow orderOut:nil];
 		[defaults removePersistentDomainForName:suiteName];
 		[[NSFileManager defaultManager] removeItemAtURL:directory error:nil];

@@ -25,7 +25,7 @@ int main() {
 		require([preferences.fontName isEqualToString:@"Menlo"], "default font should be Menlo");
 		require(preferences.fontSize == 13, "default font size should be 13");
 		require(preferences.tabWidth == 4, "default tab width should be 4");
-		require(!preferences.useTabs && preferences.showLineNumbers && !preferences.wrapLines,
+		require(!preferences.useTabs && preferences.showLineNumbers && !preferences.wrapLines && !preferences.alwaysOnTop,
 			"default editor switches should match the macOS port defaults");
 		require([preferences.languageIdentifier isEqualToString:@"zh-Hans"],
 			"interface language should default to Simplified Chinese");
@@ -56,6 +56,13 @@ int main() {
 		require(preferences.tabWidth == 1, "tab width should be clamped");
 		require(preferences.useTabs, "stored tab mode should be loaded");
 		require([preferences.languageIdentifier isEqualToString:@"en"], "stored interface language should be loaded");
+
+		[preferences updateWrapLines:YES];
+		[preferences updateAlwaysOnTop:YES];
+		NppMacPreferencesController *restoredPreferences =
+			[[NppMacPreferencesController alloc] initWithUserDefaults:defaults];
+		require(restoredPreferences.wrapLines && restoredPreferences.alwaysOnTop,
+			"view menu switches should survive a preferences controller restart");
 
 		[defaults removePersistentDomainForName:suiteName];
 		std::puts("NppMacPreferencesTests passed");

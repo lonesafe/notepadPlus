@@ -644,6 +644,7 @@ static const char bashKeywords[] =
 		defer:NO];
 	self.window.delegate = self;
 	self.window.minSize = NSMakeSize(520, 360);
+	self.window.level = self.preferencesController.alwaysOnTop ? NSFloatingWindowLevel : NSNormalWindowLevel;
 	[self.window center];
 	NppMacFileDropView *contentView = [[NppMacFileDropView alloc] initWithFrame:self.window.contentView.bounds];
 	contentView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
@@ -1383,7 +1384,9 @@ static const char bashKeywords[] =
 
 - (void)toggleAlwaysOnTop:(id)sender {
 	(void)sender;
-	self.window.level = self.window.level == NSFloatingWindowLevel ? NSNormalWindowLevel : NSFloatingWindowLevel;
+	BOOL alwaysOnTop = self.window.level != NSFloatingWindowLevel;
+	self.window.level = alwaysOnTop ? NSFloatingWindowLevel : NSNormalWindowLevel;
+	[self.preferencesController updateAlwaysOnTop:alwaysOnTop];
 }
 - (void)toggleFullScreen:(id)sender { (void)sender; [self.window toggleFullScreen:nil]; }
 - (BOOL)isCurrentDocumentMarkdown {
@@ -1438,7 +1441,10 @@ static const char bashKeywords[] =
 - (void)zoomOut:(id)sender { (void)sender; [self.editor message:SCI_ZOOMOUT]; }
 - (void)zoomReset:(id)sender { (void)sender; [self.editor message:SCI_SETZOOM wParam:0]; }
 - (void)toggleWordWrap:(id)sender {
-	(void)sender; [self.editor message:SCI_SETWRAPMODE wParam:[self.editor message:SCI_GETWRAPMODE] == SC_WRAP_NONE ? SC_WRAP_WORD : SC_WRAP_NONE];
+	(void)sender;
+	BOOL wrapLines = [self.editor message:SCI_GETWRAPMODE] == SC_WRAP_NONE;
+	[self.editor message:SCI_SETWRAPMODE wParam:wrapLines ? SC_WRAP_WORD : SC_WRAP_NONE];
+	[self.preferencesController updateWrapLines:wrapLines];
 }
 - (void)foldAll:(id)sender { (void)sender; [self.editor message:SCI_FOLDALL wParam:SC_FOLDACTION_CONTRACT]; }
 - (void)unfoldAll:(id)sender { (void)sender; [self.editor message:SCI_FOLDALL wParam:SC_FOLDACTION_EXPAND]; }

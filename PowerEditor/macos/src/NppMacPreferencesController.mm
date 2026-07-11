@@ -7,6 +7,7 @@ static NSString *const tabWidthKey = @"NppMacEditorTabWidth";
 static NSString *const useTabsKey = @"NppMacEditorUseTabs";
 static NSString *const showLineNumbersKey = @"NppMacEditorShowLineNumbers";
 static NSString *const wrapLinesKey = @"NppMacEditorWrapLines";
+static NSString *const alwaysOnTopKey = @"NppMacWindowAlwaysOnTop";
 static NSString *const languageKey = @"NppMacInterfaceLanguage";
 
 @interface NppMacPreferencesController ()
@@ -36,6 +37,7 @@ static NSString *const languageKey = @"NppMacInterfaceLanguage";
 			useTabsKey: @NO,
 			showLineNumbersKey: @YES,
 			wrapLinesKey: @NO,
+			alwaysOnTopKey: @NO,
 			languageKey: @"zh-Hans"
 		}];
 	}
@@ -65,6 +67,21 @@ static NSString *const languageKey = @"NppMacInterfaceLanguage";
 
 - (BOOL)wrapLines {
 	return [self.userDefaults boolForKey:wrapLinesKey];
+}
+
+- (BOOL)alwaysOnTop {
+	return [self.userDefaults boolForKey:alwaysOnTopKey];
+}
+
+- (void)updateWrapLines:(BOOL)wrapLines {
+	[self.userDefaults setBool:wrapLines forKey:wrapLinesKey];
+	if (self.wrapLinesCheckbox) {
+		self.wrapLinesCheckbox.state = wrapLines ? NSControlStateValueOn : NSControlStateValueOff;
+	}
+}
+
+- (void)updateAlwaysOnTop:(BOOL)alwaysOnTop {
+	[self.userDefaults setBool:alwaysOnTop forKey:alwaysOnTopKey];
 }
 
 - (NSString *)languageIdentifier {
