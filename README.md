@@ -58,12 +58,12 @@ make test
 
 仓库中的 [macos-release.yml](.github/workflows/macos-release.yml) 提供以下流程：
 
-- 推送到 `main` 或 `master`：构建、测试并上传 Actions Artifact
+- 推送到 `main` 或 `master`：自动构建、测试并创建 GitHub Release
 - Pull Request：验证 Universal 2 构建和测试
 - 推送 `v*` 标签：自动创建 GitHub Release，并上传 ZIP、DMG 和 SHA-256 校验文件
 - 手动运行：可在 Actions 页面触发构建，也可填写版本标签创建 Release
 
-创建正式版本示例：
+主分支自动发布版本号格式为 `v1.0.<Actions 运行序号>`。Release 说明会自动列出自上一版本以来的提交，并记录构建架构、验证状态和构建提交。也可以手动创建指定版本：
 
 ```bash
 git tag v1.0.0
