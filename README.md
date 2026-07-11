@@ -1,9 +1,5 @@
 # Notepad++Mac
 
-[![macOS 构建](https://github.com/lonesafe/notepadPlus/actions/workflows/macos-release.yml/badge.svg)](https://github.com/lonesafe/notepadPlus/actions/workflows/macos-release.yml)
-[![最新版本](https://img.shields.io/github/v/release/lonesafe/notepadPlus)](https://github.com/lonesafe/notepadPlus/releases/latest)
-[![许可证](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
-
 Notepad++Mac 是基于 Notepad++、Scintilla 和 Lexilla 构建的原生 macOS 文本与代码编辑器。该项目保留 Notepad++ 的多标签页、查找替换、语法高亮和常用编辑工作流，同时使用 Cocoa 重建 macOS 界面和平台功能。
 
 ## 主要功能
