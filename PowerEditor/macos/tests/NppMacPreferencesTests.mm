@@ -34,6 +34,14 @@ int main() {
 		[preferences showPreferences];
 		NSPanel *preferencesPanel = [preferences valueForKey:@"panel"];
 		require([preferencesPanel.title isEqualToString:@"偏好设置"], "preferences should initially render in Chinese");
+		NSButton *fileAssociationsButton = [preferences valueForKey:@"fileAssociationsButton"];
+		require([fileAssociationsButton.title isEqualToString:@"配置文件关联..."],
+			"preferences should expose the localized file association entry");
+		[preferences showFileAssociations];
+		id associationController = [preferences valueForKey:@"fileAssociationController"];
+		NSPanel *associationPanel = [associationController valueForKey:@"panel"];
+		require([associationPanel.title isEqualToString:@"文件关联"],
+			"preferences should open the file association panel");
 		NSPopUpButton *languagePopup = [preferences valueForKey:@"languagePopup"];
 		for (NSMenuItem *item in languagePopup.itemArray) {
 			if ([item.representedObject isEqual:@"en"]) [languagePopup selectItem:item];
@@ -42,9 +50,12 @@ int main() {
 		preferencesPanel = [preferences valueForKey:@"panel"];
 		require([preferencesPanel.title isEqualToString:@"Preferences"],
 			"changing language should immediately rebuild preferences in English");
+		require([associationPanel.title isEqualToString:@"File Associations"],
+			"open file association panel should follow preference language changes");
 		require(changeCount == 1 && [preferences.languageIdentifier isEqualToString:@"en"],
 			"language selection should persist and notify the application");
 		[preferencesPanel orderOut:nil];
+		[associationPanel orderOut:nil];
 
 		[defaults setObject:@"Monaco" forKey:@"NppMacEditorFontName"];
 		[defaults setInteger:200 forKey:@"NppMacEditorFontSize"];

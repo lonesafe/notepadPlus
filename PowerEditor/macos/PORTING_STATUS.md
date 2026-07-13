@@ -13,8 +13,8 @@
 | Search | Non-modal forward/backward find, replace current/all, case and whole-word options |
 | Languages | Bundled Lexilla and Notepad++ `langs.model.xml` extension mapping |
 | UDL engine | Real `LexUser.cxx` lexer compiled for macOS |
-| Preferences | Font, size, indentation, line numbers, and wrapping persisted in `NSUserDefaults` |
-| File safety | Original encoding preservation and external modification/deletion detection |
+| Preferences | Font, size, indentation, line numbers, wrapping, and file associations persisted in `NSUserDefaults` |
+| File safety | Original encoding preservation, external modification/deletion detection, and native Launch Services file associations |
 | Navigation | Tab cycling, go to line, live line/column and document status |
 | Packaging | Universal 2 `.app`, embedded Universal 2 Scintilla/Lexilla, ad-hoc local signature |
 
@@ -26,7 +26,7 @@ source-level macOS compile:
 - existing Notepad++ plugin DLLs and their Win32 message/`HWND` ABI
 - Explorer context-menu shell extensions
 - Windows notification-area integration
-- registry-backed settings and Windows file-association code
+- registry-backed settings and Windows file-association code (replaced by native macOS preferences and Launch Services)
 - Win32 docking-window implementations
 
 Native macOS replacements would be new platform features with different APIs.

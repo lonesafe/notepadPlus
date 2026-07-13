@@ -1,4 +1,6 @@
 #import "NppMacPreferencesController.h"
+#import "NppMacFileAssociationController.h"
+#import "NppMacFileAssociationManager.h"
 #import "NppMacLocalization.h"
 
 static NSString *const fontNameKey = @"NppMacEditorFontName";
@@ -22,6 +24,8 @@ static NSString *const languageKey = @"NppMacInterfaceLanguage";
 @property(nonatomic, strong) NSButton *useTabsCheckbox;
 @property(nonatomic, strong) NSButton *lineNumbersCheckbox;
 @property(nonatomic, strong) NSButton *wrapLinesCheckbox;
+@property(nonatomic, strong) NSButton *fileAssociationsButton;
+@property(nonatomic, strong) NppMacFileAssociationController *fileAssociationController;
 @end
 
 @implementation NppMacPreferencesController
@@ -40,6 +44,10 @@ static NSString *const languageKey = @"NppMacInterfaceLanguage";
 			alwaysOnTopKey: @NO,
 			languageKey: @"zh-Hans"
 		}];
+		NppMacFileAssociationManager *associationManager =
+			[[NppMacFileAssociationManager alloc] initWithUserDefaults:_userDefaults];
+		_fileAssociationController =
+			[[NppMacFileAssociationController alloc] initWithManager:associationManager];
 	}
 	return self;
 }
@@ -100,8 +108,12 @@ static NSString *const languageKey = @"NppMacInterfaceLanguage";
 	[self.panel makeKeyAndOrderFront:nil];
 }
 
+- (void)showFileAssociations {
+	[self.fileAssociationController showPanel];
+}
+
 - (void)buildPanel {
-	NSRect frame = NSMakeRect(0, 0, 430, 320);
+	NSRect frame = NSMakeRect(0, 0, 430, 370);
 	self.panel = [[NSPanel alloc] initWithContentRect:frame
 		styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow
 		backing:NSBackingStoreBuffered
@@ -111,8 +123,8 @@ static NSString *const languageKey = @"NppMacInterfaceLanguage";
 	self.panel.hidesOnDeactivate = NO;
 	self.panel.releasedWhenClosed = NO;
 
-	[self.panel.contentView addSubview:[self label:NppL("preferences.language") frame:NSMakeRect(24, 266, 96, 22)]];
-	self.languagePopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(126, 262, 270, 28) pullsDown:NO];
+	[self.panel.contentView addSubview:[self label:NppL("preferences.language") frame:NSMakeRect(24, 316, 96, 22)]];
+	self.languagePopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(126, 312, 270, 28) pullsDown:NO];
 	for (NSString *identifier in NppMacLocalization.supportedLanguageIdentifiers) {
 		NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:NppLocalizedString([@"language." stringByAppendingString:identifier])
 			action:nil keyEquivalent:@""];
@@ -123,32 +135,44 @@ static NSString *const languageKey = @"NppMacInterfaceLanguage";
 	self.languagePopup.action = @selector(preferenceChanged:);
 	[self.panel.contentView addSubview:self.languagePopup];
 
-	[self.panel.contentView addSubview:[self label:NppL("preferences.font") frame:NSMakeRect(24, 220, 96, 22)]];
-	self.fontPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(126, 216, 270, 28) pullsDown:NO];
+	[self.panel.contentView addSubview:[self label:NppL("preferences.font") frame:NSMakeRect(24, 270, 96, 22)]];
+	self.fontPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(126, 266, 270, 28) pullsDown:NO];
 	NSArray<NSString *> *fonts = @[@"Menlo", @"Monaco", @"SF Mono", @"Courier New"];
 	[self.fontPopup addItemsWithTitles:fonts];
 	self.fontPopup.target = self;
 	self.fontPopup.action = @selector(preferenceChanged:);
 	[self.panel.contentView addSubview:self.fontPopup];
 
-	[self.panel.contentView addSubview:[self label:NppL("preferences.fontSize") frame:NSMakeRect(24, 178, 96, 22)]];
-	self.fontSizeField = [self numericFieldWithFrame:NSMakeRect(126, 175, 62, 26)];
+	[self.panel.contentView addSubview:[self label:NppL("preferences.fontSize") frame:NSMakeRect(24, 228, 96, 22)]];
+	self.fontSizeField = [self numericFieldWithFrame:NSMakeRect(126, 225, 62, 26)];
 	[self.panel.contentView addSubview:self.fontSizeField];
-	self.fontSizeStepper = [self stepperWithFrame:NSMakeRect(190, 174, 22, 28) minimum:8 maximum:36];
+	self.fontSizeStepper = [self stepperWithFrame:NSMakeRect(190, 224, 22, 28) minimum:8 maximum:36];
 	[self.panel.contentView addSubview:self.fontSizeStepper];
 
-	[self.panel.contentView addSubview:[self label:NppL("preferences.tabWidth") frame:NSMakeRect(24, 136, 96, 22)]];
-	self.tabWidthField = [self numericFieldWithFrame:NSMakeRect(126, 133, 62, 26)];
+	[self.panel.contentView addSubview:[self label:NppL("preferences.tabWidth") frame:NSMakeRect(24, 186, 96, 22)]];
+	self.tabWidthField = [self numericFieldWithFrame:NSMakeRect(126, 183, 62, 26)];
 	[self.panel.contentView addSubview:self.tabWidthField];
-	self.tabWidthStepper = [self stepperWithFrame:NSMakeRect(190, 132, 22, 28) minimum:1 maximum:16];
+	self.tabWidthStepper = [self stepperWithFrame:NSMakeRect(190, 182, 22, 28) minimum:1 maximum:16];
 	[self.panel.contentView addSubview:self.tabWidthStepper];
 
-	self.useTabsCheckbox = [self checkbox:NppL("preferences.useTabs") frame:NSMakeRect(126, 98, 220, 24)];
+	self.useTabsCheckbox = [self checkbox:NppL("preferences.useTabs") frame:NSMakeRect(126, 148, 220, 24)];
 	[self.panel.contentView addSubview:self.useTabsCheckbox];
-	self.lineNumbersCheckbox = [self checkbox:NppL("preferences.lineNumbers") frame:NSMakeRect(126, 66, 220, 24)];
+	self.lineNumbersCheckbox = [self checkbox:NppL("preferences.lineNumbers") frame:NSMakeRect(126, 116, 220, 24)];
 	[self.panel.contentView addSubview:self.lineNumbersCheckbox];
-	self.wrapLinesCheckbox = [self checkbox:NppL("preferences.wrapLines") frame:NSMakeRect(126, 34, 220, 24)];
+	self.wrapLinesCheckbox = [self checkbox:NppL("preferences.wrapLines") frame:NSMakeRect(126, 84, 220, 24)];
 	[self.panel.contentView addSubview:self.wrapLinesCheckbox];
+
+	self.fileAssociationsButton = [[NSButton alloc] initWithFrame:NSMakeRect(126, 32, 210, 30)];
+	self.fileAssociationsButton.title = NppL("preferences.fileAssociations");
+	self.fileAssociationsButton.bezelStyle = NSBezelStyleRounded;
+	self.fileAssociationsButton.target = self;
+	self.fileAssociationsButton.action = @selector(showFileAssociationsAction:);
+	[self.panel.contentView addSubview:self.fileAssociationsButton];
+}
+
+- (void)showFileAssociationsAction:(id)sender {
+	(void)sender;
+	[self showFileAssociations];
 }
 
 - (NSTextField *)label:(NSString *)title frame:(NSRect)frame {
@@ -241,6 +265,7 @@ static NSString *const languageKey = @"NppMacInterfaceLanguage";
 }
 
 - (void)reloadLocalization {
+	[self.fileAssociationController reloadLocalization];
 	if (!self.panel) {
 		return;
 	}

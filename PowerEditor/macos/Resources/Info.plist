@@ -35,15 +35,56 @@
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
 			<string>Alternate</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>public.text</string>
-				<string>public.source-code</string>
-				<string>public.data</string>
-			</array>
 			<key>CFBundleTypeExtensions</key>
 			<array>
-				<string>*</string>
+				<string>txt</string>
+				<string>text</string>
+				<string>log</string>
+				<string>md</string>
+				<string>markdown</string>
+				<string>mdown</string>
+				<string>mdx</string>
+				<string>html</string>
+				<string>htm</string>
+				<string>xhtml</string>
+				<string>css</string>
+				<string>scss</string>
+				<string>less</string>
+				<string>xml</string>
+				<string>json</string>
+				<string>jsonc</string>
+				<string>yaml</string>
+				<string>yml</string>
+				<string>toml</string>
+				<string>js</string>
+				<string>jsx</string>
+				<string>mjs</string>
+				<string>cjs</string>
+				<string>ts</string>
+				<string>tsx</string>
+				<string>c</string>
+				<string>h</string>
+				<string>cc</string>
+				<string>cpp</string>
+				<string>cxx</string>
+				<string>hpp</string>
+				<string>hxx</string>
+				<string>cs</string>
+				<string>java</string>
+				<string>py</string>
+				<string>pyw</string>
+				<string>go</string>
+				<string>sh</string>
+				<string>bash</string>
+				<string>zsh</string>
+				<string>fish</string>
+				<string>swift</string>
+				<string>sql</string>
+				<string>ini</string>
+				<string>cfg</string>
+				<string>conf</string>
+				<string>properties</string>
+				<string>env</string>
 			</array>
 		</dict>
 	</array>

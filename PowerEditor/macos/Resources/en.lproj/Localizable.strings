@@ -142,6 +142,7 @@
 "menu.language.define" = "Define your language...";
 
 "menu.settings" = "Settings";
+"menu.settings.fileAssociations" = "File Associations...";
 "menu.settings.style" = "Style Configurator...";
 "menu.settings.shortcuts" = "Shortcut Mapper...";
 "menu.settings.import" = "Import";
@@ -189,6 +190,32 @@
 "preferences.useTabs" = "Insert tab characters";
 "preferences.lineNumbers" = "Show line numbers";
 "preferences.wrapLines" = "Wrap long lines";
+"preferences.fileAssociations" = "Configure File Associations...";
+
+"fileAssociation.title" = "File Associations";
+"fileAssociation.description" = "Choose the file types that open with Notepad++Mac by default. macOS may ask you to confirm this change.";
+"fileAssociation.column.type" = "File type";
+"fileAssociation.column.extensions" = "Extensions";
+"fileAssociation.selectAll" = "Select All";
+"fileAssociation.clear" = "Clear";
+"fileAssociation.apply" = "Apply Associations";
+"fileAssociation.applying" = "Updating file associations...";
+"fileAssociation.success" = "File associations were updated.";
+"fileAssociation.failed" = "Some file associations could not be updated: %@";
+"fileAssociation.type.text" = "Text and logs";
+"fileAssociation.type.markdown" = "Markdown";
+"fileAssociation.type.web" = "Web and XML";
+"fileAssociation.type.json" = "JSON and configuration data";
+"fileAssociation.type.javascript" = "JavaScript and TypeScript";
+"fileAssociation.type.cpp" = "C and C++";
+"fileAssociation.type.csharp" = "C#";
+"fileAssociation.type.java" = "Java";
+"fileAssociation.type.python" = "Python";
+"fileAssociation.type.go" = "Go";
+"fileAssociation.type.shell" = "Shell scripts";
+"fileAssociation.type.swift" = "Swift";
+"fileAssociation.type.sql" = "SQL";
+"fileAssociation.type.config" = "Configuration files";
 
 "find.tab.find" = "Find";
 "find.tab.replace" = "Replace";

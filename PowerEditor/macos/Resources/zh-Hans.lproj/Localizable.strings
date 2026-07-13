@@ -142,6 +142,7 @@
 "menu.language.define" = "自定义语言...";
 
 "menu.settings" = "设置";
+"menu.settings.fileAssociations" = "文件关联...";
 "menu.settings.style" = "语言格式设置...";
 "menu.settings.shortcuts" = "快捷键管理...";
 "menu.settings.import" = "导入";
@@ -189,6 +190,32 @@
 "preferences.useTabs" = "插入制表符";
 "preferences.lineNumbers" = "显示行号";
 "preferences.wrapLines" = "自动换行";
+"preferences.fileAssociations" = "配置文件关联...";
+
+"fileAssociation.title" = "文件关联";
+"fileAssociation.description" = "选择默认使用 Notepad++Mac 打开的文件类型。macOS 可能会要求确认此更改。";
+"fileAssociation.column.type" = "文件类型";
+"fileAssociation.column.extensions" = "扩展名";
+"fileAssociation.selectAll" = "全选";
+"fileAssociation.clear" = "清除";
+"fileAssociation.apply" = "应用关联";
+"fileAssociation.applying" = "正在更新文件关联...";
+"fileAssociation.success" = "文件关联已更新。";
+"fileAssociation.failed" = "部分文件关联更新失败：%@";
+"fileAssociation.type.text" = "文本与日志";
+"fileAssociation.type.markdown" = "Markdown";
+"fileAssociation.type.web" = "Web 与 XML";
+"fileAssociation.type.json" = "JSON 与配置数据";
+"fileAssociation.type.javascript" = "JavaScript 与 TypeScript";
+"fileAssociation.type.cpp" = "C 与 C++";
+"fileAssociation.type.csharp" = "C#";
+"fileAssociation.type.java" = "Java";
+"fileAssociation.type.python" = "Python";
+"fileAssociation.type.go" = "Go";
+"fileAssociation.type.shell" = "Shell 脚本";
+"fileAssociation.type.swift" = "Swift";
+"fileAssociation.type.sql" = "SQL";
+"fileAssociation.type.config" = "配置文件";
 
 "find.tab.find" = "查找";
 "find.tab.replace" = "替换";

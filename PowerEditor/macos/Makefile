@@ -27,7 +27,8 @@ LEXILLA_LEXER_SOURCES := $(notdir $(wildcard $(LEXILLA_LEXERS_DIR)/Lex*.cxx))
 LEXILLA_OBJS := $(addprefix $(LEXILLA_OBJ_DIR)/,Lexilla.o $(LEXILLA_LEXLIB_OBJS) \
 	$(LEXILLA_LEXER_SOURCES:.cxx=.o))
 
-SRC := src/main.mm src/NppMacAppDelegate.mm src/NppMacCodeFormatter.mm src/NppMacFileDropView.mm src/NppMacFindPanelController.mm \
+SRC := src/main.mm src/NppMacAppDelegate.mm src/NppMacCodeFormatter.mm src/NppMacFileAssociationController.mm \
+	src/NppMacFileAssociationManager.mm src/NppMacFileDropView.mm src/NppMacFindPanelController.mm \
 	src/NppMacLanguageCatalog.mm src/NppMacLocalization.mm src/NppMacMarkdownPreviewController.mm \
 	src/NppMacMarkdownRenderer.mm src/NppMacPreferencesController.mm src/NppMacRecoveryStore.mm \
 	src/NppMacSessionStore.mm src/NppMacTabBarView.mm src/NppMacToolBarView.mm
@@ -48,6 +49,7 @@ FORMATTER_TEST_BIN := $(BUILD_DIR)/tests/NppMacCodeFormatterTests
 MARKDOWN_TEST_BIN := $(BUILD_DIR)/tests/NppMacMarkdownRendererTests
 MARKDOWN_PREVIEW_TEST_BIN := $(BUILD_DIR)/tests/NppMacMarkdownPreviewTests
 FILE_DROP_TEST_BIN := $(BUILD_DIR)/tests/NppMacFileDropTests
+FILE_ASSOCIATION_TEST_BIN := $(BUILD_DIR)/tests/NppMacFileAssociationTests
 
 CXX := clang++
 CXXFLAGS := -std=c++17 -fobjc-arc -fobjc-weak -fmodules -mmacosx-version-min=10.13 $(ARCH_FLAGS) \
@@ -56,7 +58,8 @@ CXXFLAGS := -std=c++17 -fobjc-arc -fobjc-weak -fmodules -mmacosx-version-min=10.
 	-I$(ROOT_DIR)/scintilla/include \
 	-I$(ROOT_DIR)/scintilla/cocoa \
 	-I$(ROOT_DIR)/lexilla/include
-LDFLAGS := -F$(SCINTILLA_PRODUCTS) -framework Cocoa -framework WebKit -framework Scintilla \
+LDFLAGS := -F$(SCINTILLA_PRODUCTS) -framework Cocoa -framework WebKit -framework CoreServices \
+	-weak_framework UniformTypeIdentifiers -framework Scintilla \
 	-Wl,-rpath,@executable_path/../Frameworks
 
 LEXILLA_CXXFLAGS := -std=c++17 -DNDEBUG -fPIC -fvisibility=hidden -O3 -Wpedantic -Wall -Wextra $(ARCH_FLAGS) \
@@ -141,21 +144,26 @@ $(SESSION_TEST_BIN): tests/NppMacSessionStoreTests.mm src/NppMacSessionStore.mm
 		-framework Foundation -o $(SESSION_TEST_BIN)
 
 $(SESSION_RESTORE_TEST_BIN): tests/NppMacSessionRestoreTests.mm src/NppMacAppDelegate.mm \
-		src/NppMacCodeFormatter.mm src/NppMacFileDropView.mm src/NppMacFindPanelController.mm src/NppMacLanguageCatalog.mm src/NppMacMarkdownPreviewController.mm \
+		src/NppMacCodeFormatter.mm src/NppMacFileAssociationController.mm src/NppMacFileAssociationManager.mm \
+		src/NppMacFileDropView.mm src/NppMacFindPanelController.mm src/NppMacLanguageCatalog.mm src/NppMacMarkdownPreviewController.mm \
 		src/NppMacMarkdownRenderer.mm src/NppMacPreferencesController.mm src/NppMacRecoveryStore.mm \
 		src/NppMacLocalization.mm src/NppMacSessionStore.mm src/NppMacTabBarView.mm src/NppMacToolBarView.mm scintilla
 	mkdir -p $(dir $(SESSION_RESTORE_TEST_BIN))
 	$(CXX) $(CXXFLAGS) tests/NppMacSessionRestoreTests.mm src/NppMacAppDelegate.mm \
-		src/NppMacCodeFormatter.mm src/NppMacFileDropView.mm src/NppMacFindPanelController.mm src/NppMacLanguageCatalog.mm src/NppMacMarkdownPreviewController.mm \
+		src/NppMacCodeFormatter.mm src/NppMacFileAssociationController.mm src/NppMacFileAssociationManager.mm \
+		src/NppMacFileDropView.mm src/NppMacFindPanelController.mm src/NppMacLanguageCatalog.mm src/NppMacMarkdownPreviewController.mm \
 		src/NppMacMarkdownRenderer.mm src/NppMacPreferencesController.mm src/NppMacRecoveryStore.mm \
 		src/NppMacLocalization.mm src/NppMacSessionStore.mm src/NppMacTabBarView.mm src/NppMacToolBarView.mm \
-		-F$(SCINTILLA_PRODUCTS) -framework Cocoa -framework WebKit -framework Scintilla \
+		-F$(SCINTILLA_PRODUCTS) -framework Cocoa -framework WebKit -framework CoreServices \
+		-weak_framework UniformTypeIdentifiers -framework Scintilla \
 		-Wl,-rpath,$(abspath $(SCINTILLA_PRODUCTS)) -o $(SESSION_RESTORE_TEST_BIN)
 
-$(PREFERENCES_TEST_BIN): tests/NppMacPreferencesTests.mm src/NppMacPreferencesController.mm src/NppMacLocalization.mm
+$(PREFERENCES_TEST_BIN): tests/NppMacPreferencesTests.mm src/NppMacPreferencesController.mm \
+		src/NppMacFileAssociationController.mm src/NppMacFileAssociationManager.mm src/NppMacLocalization.mm
 	mkdir -p $(dir $(PREFERENCES_TEST_BIN))
-	$(CXX) $(CXXFLAGS) tests/NppMacPreferencesTests.mm src/NppMacPreferencesController.mm src/NppMacLocalization.mm \
-		-framework Cocoa -o $(PREFERENCES_TEST_BIN)
+	$(CXX) $(CXXFLAGS) tests/NppMacPreferencesTests.mm src/NppMacPreferencesController.mm \
+		src/NppMacFileAssociationController.mm src/NppMacFileAssociationManager.mm src/NppMacLocalization.mm \
+		-framework Cocoa -framework CoreServices -weak_framework UniformTypeIdentifiers -o $(PREFERENCES_TEST_BIN)
 
 $(RECOVERY_TEST_BIN): tests/NppMacRecoveryStoreTests.mm src/NppMacRecoveryStore.mm
 	mkdir -p $(dir $(RECOVERY_TEST_BIN))
@@ -208,9 +216,17 @@ $(FILE_DROP_TEST_BIN): tests/NppMacFileDropTests.mm src/NppMacFileDropView.mm
 	$(CXX) $(CXXFLAGS) tests/NppMacFileDropTests.mm src/NppMacFileDropView.mm \
 		-framework Cocoa -o $(FILE_DROP_TEST_BIN)
 
+$(FILE_ASSOCIATION_TEST_BIN): tests/NppMacFileAssociationTests.mm src/NppMacFileAssociationController.mm \
+		src/NppMacFileAssociationManager.mm src/NppMacLocalization.mm
+	mkdir -p $(dir $(FILE_ASSOCIATION_TEST_BIN))
+	$(CXX) $(CXXFLAGS) tests/NppMacFileAssociationTests.mm src/NppMacFileAssociationController.mm \
+		src/NppMacFileAssociationManager.mm src/NppMacLocalization.mm \
+		-framework Cocoa -framework CoreServices -weak_framework UniformTypeIdentifiers -o $(FILE_ASSOCIATION_TEST_BIN)
+
 test: $(FIND_TEST_BIN) $(SESSION_TEST_BIN) $(SESSION_RESTORE_TEST_BIN) $(PREFERENCES_TEST_BIN) \
 		$(RECOVERY_TEST_BIN) $(LANGUAGE_TEST_BIN) $(LEXILLA_TEST_BIN) $(TAB_BAR_TEST_BIN) $(LOCALIZATION_TEST_BIN) \
-		$(TOOL_BAR_TEST_BIN) $(FORMATTER_TEST_BIN) $(MARKDOWN_TEST_BIN) $(MARKDOWN_PREVIEW_TEST_BIN) $(FILE_DROP_TEST_BIN)
+		$(TOOL_BAR_TEST_BIN) $(FORMATTER_TEST_BIN) $(MARKDOWN_TEST_BIN) $(MARKDOWN_PREVIEW_TEST_BIN) $(FILE_DROP_TEST_BIN) \
+		$(FILE_ASSOCIATION_TEST_BIN)
 	$(FIND_TEST_BIN)
 	$(SESSION_TEST_BIN)
 	$(SESSION_RESTORE_TEST_BIN)
@@ -225,6 +241,7 @@ test: $(FIND_TEST_BIN) $(SESSION_TEST_BIN) $(SESSION_RESTORE_TEST_BIN) $(PREFERE
 	$(MARKDOWN_TEST_BIN)
 	$(MARKDOWN_PREVIEW_TEST_BIN)
 	$(FILE_DROP_TEST_BIN)
+	$(FILE_ASSOCIATION_TEST_BIN)
 
 run: app
 	open $(APP_DIR)

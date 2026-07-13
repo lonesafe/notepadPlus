@@ -519,6 +519,7 @@ static const char bashKeywords[] =
 
 	NSMenu *settingsMenu = [self addSubmenu:NppL("menu.settings") toMenu:mainMenu];
 	[self addItem:NppL("menu.app.preferences") action:@selector(showPreferences:) key:@"" toMenu:settingsMenu];
+	[self addItem:NppL("menu.settings.fileAssociations") action:@selector(showFileAssociations:) key:@"" toMenu:settingsMenu];
 	[self addDisabledItem:NppL("menu.settings.style") toMenu:settingsMenu];
 	[self addDisabledItem:NppL("menu.settings.shortcuts") toMenu:settingsMenu];
 	NSMenu *importMenu = [self addSubmenu:NppL("menu.settings.import") toMenu:settingsMenu];
@@ -1284,6 +1285,11 @@ static const char bashKeywords[] =
 - (void)showPreferences:(id)sender {
 	(void)sender;
 	[self.preferencesController showPreferences];
+}
+
+- (void)showFileAssociations:(id)sender {
+	(void)sender;
+	[self.preferencesController showFileAssociations];
 }
 
 - (void)findText:(id)sender {

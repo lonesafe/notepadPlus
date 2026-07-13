@@ -14,6 +14,7 @@
 
 - (instancetype)initWithUserDefaults:(NSUserDefaults *)userDefaults;
 - (void)showPreferences;
+- (void)showFileAssociations;
 - (void)reloadLocalization;
 - (void)updateWrapLines:(BOOL)wrapLines;
 - (void)updateAlwaysOnTop:(BOOL)alwaysOnTop;

@@ -128,6 +128,8 @@ jobs:
             test "$(lipo -archs "${app}/Contents/MacOS/Notepad++Mac")" = "arm64 x86_64"
           test "$(lipo -archs "${app}/Contents/Frameworks/liblexilla.dylib")" = "x86_64 arm64" || \
             test "$(lipo -archs "${app}/Contents/Frameworks/liblexilla.dylib")" = "arm64 x86_64"
+          test "$(lipo -archs "${app}/Contents/Frameworks/Scintilla.framework/Scintilla")" = "x86_64 arm64" || \
+            test "$(lipo -archs "${app}/Contents/Frameworks/Scintilla.framework/Scintilla")" = "arm64 x86_64"
 
       - name: Package ZIP and DMG
         id: package
