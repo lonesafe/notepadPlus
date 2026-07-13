@@ -229,6 +229,8 @@
 "find.action.markAll" = "Mark All";
 "find.action.clearMarks" = "Clear all marks";
 "find.action.copyMarked" = "Copy Marked Text";
+"find.action.close" = "Close";
+"find.results.title" = "Find Results";
 "find.status.enter" = "Enter search text";
 "find.status.none" = "No matches";
 "find.status.found" = "Match found";

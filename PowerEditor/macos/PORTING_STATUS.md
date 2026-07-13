@@ -4,6 +4,7 @@
 
 | Area | macOS implementation |
 | --- | --- |
+| Toolbar | Original icon resources and command grouping with localized tooltips and live command state |
 | Editor | Cocoa `ScintillaView`, UTF-8 internal document model, native undo/redo and clipboard |
 | Documents | Original-style multi-buffer tabs with state icons, close controls, drag reordering and overflow scrolling; open/save/save as/reload, dirty state, close confirmation |
 | Search | Four-tab find/replace/files/mark panel; normal, extended and regex modes; current/open-document and directory operations |

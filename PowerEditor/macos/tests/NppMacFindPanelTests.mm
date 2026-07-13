@@ -37,6 +37,21 @@ int main() {
 		NSButton *wholeWord = [controller valueForKey:@"wholeWordCheckbox"];
 		NSButton *inSelection = [controller valueForKey:@"inSelectionCheckbox"];
 		NSPopUpButton *searchMode = [controller valueForKey:@"searchModePopup"];
+		NSPanel *findPanel = [controller valueForKey:@"panel"];
+		NSBox *searchModeBox = [controller valueForKey:@"searchModeBox"];
+		NSButton *normalModeRadio = [controller valueForKey:@"normalModeRadio"];
+		NSButton *extendedModeRadio = [controller valueForKey:@"extendedModeRadio"];
+		NSButton *closeButton = [controller valueForKey:@"closeButton"];
+		NSScrollView *resultsScrollView = [controller valueForKey:@"resultsScrollView"];
+		require(NSHeight(findPanel.contentView.bounds) <= 390, "find panel should use the original compact height");
+		require(searchModeBox.superview != nil && normalModeRadio.superview != nil,
+			"search modes should be visible as an original-style radio-button group");
+		require(closeButton.superview != nil, "the original-style action column should include a close button");
+		require(resultsScrollView.superview == nil,
+			"find results should not permanently occupy space in the compact find panel");
+		[extendedModeRadio performClick:nil];
+		require(searchMode.indexOfSelectedItem == 1, "search mode radio buttons should update search behavior");
+		[normalModeRadio performClick:nil];
 
 		[editor setString:@"alpha beta alpha\nALPHA"];
 		findField.stringValue = @"alpha";
@@ -143,7 +158,6 @@ int main() {
 
 		NSString *snapshotDirectory = NSProcessInfo.processInfo.environment[@"NPP_FIND_SNAPSHOT_DIR"];
 		if (snapshotDirectory.length > 0) {
-			NSPanel *findPanel = [controller valueForKey:@"panel"];
 			findPanel.contentView.wantsLayer = YES;
 			findPanel.contentView.layer.backgroundColor = NSColor.windowBackgroundColor.CGColor;
 			NSTabView *tabView = [controller valueForKey:@"tabView"];

@@ -49,17 +49,23 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 @property(nonatomic, strong) NSButton *bookmarkLineCheckbox;
 @property(nonatomic, strong) NSButton *purgeCheckbox;
 @property(nonatomic, strong) NSPopUpButton *searchModePopup;
+@property(nonatomic, strong) NSBox *searchModeBox;
+@property(nonatomic, strong) NSButton *normalModeRadio;
+@property(nonatomic, strong) NSButton *extendedModeRadio;
+@property(nonatomic, strong) NSButton *regexModeRadio;
+@property(nonatomic, strong) NSButton *closeButton;
 @property(nonatomic, strong) NSTextField *statusLabel;
 @property(nonatomic, strong) NSTextView *resultsView;
 @property(nonatomic, strong) NSScrollView *resultsScrollView;
+@property(nonatomic, strong) NSPanel *resultsPanel;
 @property(nonatomic, strong) NSTextField *findLabel;
 @property(nonatomic, strong) NSTextField *secondaryLabel;
 @property(nonatomic, strong) NSTextField *directoryLabel;
-@property(nonatomic, strong) NSTextField *searchModeLabel;
 @property(nonatomic, strong) NSMutableArray<NSView *> *sharedControls;
 @property(nonatomic, strong) NSArray<NSValue *> *markedRanges;
 @property(nonatomic) sptr_t selectionScopeStart;
 @property(nonatomic) sptr_t selectionScopeEnd;
+- (void)showResultsWithText:(NSString *)text;
 @end
 
 @implementation NppMacFindPanelController
@@ -79,7 +85,7 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 }
 
 - (void)buildPanel {
-	NSRect frame = NSMakeRect(0, 0, 680, 510);
+	NSRect frame = NSMakeRect(0, 0, 680, 390);
 	NSWindowStyleMask style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
 		NSWindowStyleMaskResizable | NSWindowStyleMaskUtilityWindow;
 	self.panel = [[NSPanel alloc] initWithContentRect:frame styleMask:style backing:NSBackingStoreBuffered defer:NO];
@@ -87,16 +93,16 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 	self.panel.floatingPanel = YES;
 	self.panel.hidesOnDeactivate = NO;
 	self.panel.releasedWhenClosed = NO;
-	self.panel.minSize = NSMakeSize(680, 510);
+	self.panel.minSize = NSMakeSize(680, 390);
 	self.panel.delegate = self;
 
-	self.tabView = [[NSTabView alloc] initWithFrame:NSMakeRect(12, 38, 656, 460)];
+	self.tabView = [[NSTabView alloc] initWithFrame:NSMakeRect(12, 36, 656, 342)];
 	self.tabView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
 	self.tabView.delegate = self;
 	for (NSString *title in @[@"Find", @"Replace", @"Find in Files", @"Mark"]) {
 		NSTabViewItem *item = [[NSTabViewItem alloc] initWithIdentifier:title];
 		item.label = title;
-		item.view = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 640, 420)];
+		item.view = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 640, 302)];
 		[self.tabView addTabViewItem:item];
 	}
 	[self.panel.contentView addSubview:self.tabView];
@@ -111,7 +117,6 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 	self.findLabel = [self label:@"Find what:"];
 	self.secondaryLabel = [self label:@""];
 	self.directoryLabel = [self label:@"Directory:"];
-	self.searchModeLabel = [self label:@"Search mode:"];
 
 	self.matchCaseCheckbox = [self checkbox:@"Match case" action:nil];
 	self.wholeWordCheckbox = [self checkbox:@"Match whole word only" action:nil];
@@ -131,6 +136,18 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 	[self.searchModePopup addItemsWithTitles:@[@"Normal", @"Extended (\\n, \\r, \\t, \\0, \\x...)", @"Regular expression"]];
 	self.searchModePopup.target = self;
 	self.searchModePopup.action = @selector(searchModeChanged:);
+	self.searchModePopup.hidden = YES;
+	self.searchModeBox = [[NSBox alloc] initWithFrame:NSZeroRect];
+	self.searchModeBox.boxType = NSBoxPrimary;
+	self.searchModeBox.titlePosition = NSAtTop;
+	[(NSTextFieldCell *)self.searchModeBox.titleCell setAlignment:NSTextAlignmentLeft];
+	self.normalModeRadio = [NSButton radioButtonWithTitle:@"Normal" target:self action:@selector(searchModeRadioChanged:)];
+	self.extendedModeRadio = [NSButton radioButtonWithTitle:@"Extended" target:self action:@selector(searchModeRadioChanged:)];
+	self.regexModeRadio = [NSButton radioButtonWithTitle:@"Regular expression" target:self action:@selector(searchModeRadioChanged:)];
+	self.normalModeRadio.tag = NppMacSearchModeNormal;
+	self.extendedModeRadio.tag = NppMacSearchModeExtended;
+	self.regexModeRadio.tag = NppMacSearchModeRegex;
+	self.normalModeRadio.state = NSControlStateValueOn;
 
 	self.resultsView = [[NSTextView alloc] initWithFrame:NSZeroRect];
 	self.resultsView.editable = NO;
@@ -147,17 +164,17 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 	self.statusLabel = [self label:@""];
 	self.statusLabel.textColor = NSColor.secondaryLabelColor;
 	self.statusLabel.lineBreakMode = NSLineBreakByTruncatingTail;
-	self.statusLabel.frame = NSMakeRect(20, 10, 640, 22);
+	self.statusLabel.frame = NSMakeRect(20, 8, 640, 22);
 	self.statusLabel.autoresizingMask = NSViewWidthSizable | NSViewMaxYMargin;
 	[self.panel.contentView addSubview:self.statusLabel];
 
 	self.sharedControls = [NSMutableArray arrayWithArray:@[
-		self.findLabel, self.secondaryLabel, self.directoryLabel, self.searchModeLabel,
+		self.findLabel, self.secondaryLabel, self.directoryLabel,
 		self.findField, self.replaceField, self.filtersField, self.directoryField,
 		self.matchCaseCheckbox, self.wholeWordCheckbox, self.wrapCheckbox, self.backwardsCheckbox,
 		self.inSelectionCheckbox, self.dotMatchesNewlineCheckbox, self.recursiveCheckbox,
 		self.hiddenFoldersCheckbox, self.bookmarkLineCheckbox, self.purgeCheckbox,
-		self.searchModePopup, self.resultsScrollView
+		self.searchModeBox, self.normalModeRadio, self.extendedModeRadio, self.regexModeRadio
 	]];
 
 	NSArray<NSDictionary *> *buttons = @[
@@ -181,6 +198,9 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 		button.tag = [spec[@"tag"] integerValue];
 		[self.sharedControls addObject:button];
 	}
+	self.closeButton = [self button:@"Close" action:@selector(closePanelAction:)];
+	self.closeButton.tag = 99;
+	[self.sharedControls addObject:self.closeButton];
 
 	[self.tabView selectTabViewItemAtIndex:NppMacFindTabFind];
 	[self reloadLocalization];
@@ -200,7 +220,6 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 	self.directoryField.placeholderString = NppL("find.placeholder.directory");
 	self.findLabel.stringValue = NppL("find.findWhat");
 	self.directoryLabel.stringValue = NppL("find.directory");
-	self.searchModeLabel.stringValue = NppL("find.searchMode");
 	self.matchCaseCheckbox.title = NppL("find.option.matchCase");
 	self.wholeWordCheckbox.title = NppL("find.option.wholeWord");
 	self.wrapCheckbox.title = NppL("find.option.wrap");
@@ -211,6 +230,12 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 	self.hiddenFoldersCheckbox.title = NppL("find.option.hidden");
 	self.bookmarkLineCheckbox.title = NppL("find.option.bookmark");
 	self.purgeCheckbox.title = NppL("find.option.purge");
+	self.searchModeBox.title = NppL("find.searchMode");
+	self.normalModeRadio.title = NppL("find.mode.normal");
+	self.extendedModeRadio.title = NppL("find.mode.extended");
+	self.regexModeRadio.title = NppL("find.mode.regex");
+	self.closeButton.title = NppL("find.action.close");
+	self.resultsPanel.title = NppL("find.results.title");
 	NSInteger mode = self.searchModePopup.indexOfSelectedItem;
 	[self.searchModePopup removeAllItems];
 	[self.searchModePopup addItemsWithTitles:@[NppL("find.mode.normal"), NppL("find.mode.extended"), NppL("find.mode.regex")]];
@@ -286,29 +311,39 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 	}
 
 	CGFloat width = NSWidth(content.bounds);
-	CGFloat actionWidth = 170.0;
-	CGFloat actionX = width - actionWidth - 8.0;
-	self.findField.frame = NSMakeRect(104, 355, actionX - 120, 26);
-	self.findLabel.frame = NSMakeRect(18, 358, 80, 22);
-	self.replaceField.frame = NSMakeRect(104, 317, actionX - 120, 26);
-	self.filtersField.frame = NSMakeRect(104, 317, actionX - 120, 26);
-	self.directoryField.frame = NSMakeRect(104, 279, actionX - 120, 26);
-	self.secondaryLabel.frame = NSMakeRect(18, 320, 80, 22);
-	self.directoryLabel.frame = NSMakeRect(18, 282, 80, 22);
-	self.matchCaseCheckbox.frame = NSMakeRect(18, 222, 190, 24);
-	self.wholeWordCheckbox.frame = NSMakeRect(18, 246, 190, 24);
-	self.wrapCheckbox.frame = NSMakeRect(220, 246, 150, 24);
-	self.backwardsCheckbox.frame = NSMakeRect(220, 222, 190, 24);
-	self.inSelectionCheckbox.frame = NSMakeRect(220, 198, 150, 24);
-	self.dotMatchesNewlineCheckbox.frame = NSMakeRect(18, 198, 180, 24);
-	self.searchModeLabel.frame = NSMakeRect(18, 168, 88, 22);
-	self.searchModePopup.frame = NSMakeRect(110, 164, 340, 28);
-	self.recursiveCheckbox.frame = NSMakeRect(18, 246, 180, 24);
-	self.hiddenFoldersCheckbox.frame = NSMakeRect(220, 246, 170, 24);
-	self.bookmarkLineCheckbox.frame = NSMakeRect(18, 280, 160, 24);
-	self.purgeCheckbox.frame = NSMakeRect(18, 256, 190, 24);
-	self.resultsScrollView.frame = NSMakeRect(18, 12, actionX - 36, 140);
-	self.resultsScrollView.autoresizingMask = NSViewWidthSizable;
+	CGFloat height = NSHeight(content.bounds);
+	CGFloat actionWidth = 158.0;
+	CGFloat actionX = width - actionWidth - 10.0;
+	CGFloat fieldX = 104.0;
+	CGFloat fieldWidth = actionX - fieldX - 12.0;
+	CGFloat topY = height - 46.0;
+	self.findField.frame = NSMakeRect(fieldX, topY, fieldWidth, 26);
+	self.findLabel.frame = NSMakeRect(14, topY + 3, 84, 22);
+	self.replaceField.frame = NSMakeRect(fieldX, topY - 38, fieldWidth, 26);
+	self.filtersField.frame = self.replaceField.frame;
+	self.directoryField.frame = NSMakeRect(fieldX, topY - 76, fieldWidth, 26);
+	self.secondaryLabel.frame = NSMakeRect(14, topY - 35, 84, 22);
+	self.directoryLabel.frame = NSMakeRect(14, topY - 73, 84, 22);
+
+	CGFloat leftOptionX = 18.0;
+	CGFloat rightOptionX = 228.0;
+	CGFloat optionTop = tab == NppMacFindTabFiles ? topY - 112 : topY - 96;
+	self.wholeWordCheckbox.frame = NSMakeRect(leftOptionX, optionTop, 200, 22);
+	self.matchCaseCheckbox.frame = NSMakeRect(leftOptionX, optionTop - 24, 200, 22);
+	self.wrapCheckbox.frame = NSMakeRect(rightOptionX, optionTop, 160, 22);
+	self.backwardsCheckbox.frame = NSMakeRect(rightOptionX, optionTop - 24, 200, 22);
+	self.inSelectionCheckbox.frame = NSMakeRect(rightOptionX, optionTop - 48, 160, 22);
+	self.recursiveCheckbox.frame = NSMakeRect(leftOptionX, optionTop, 200, 22);
+	self.hiddenFoldersCheckbox.frame = NSMakeRect(rightOptionX, optionTop, 190, 22);
+	self.bookmarkLineCheckbox.frame = NSMakeRect(leftOptionX, optionTop + 48, 200, 22);
+	self.purgeCheckbox.frame = NSMakeRect(leftOptionX, optionTop + 24, 200, 22);
+
+	self.searchModeBox.frame = NSMakeRect(12, 8, actionX - 26, 92);
+	self.normalModeRadio.frame = NSMakeRect(24, 62, 190, 22);
+	self.extendedModeRadio.frame = NSMakeRect(24, 38, actionX - 50, 22);
+	self.regexModeRadio.frame = NSMakeRect(24, 14, 178, 22);
+	self.dotMatchesNewlineCheckbox.frame = NSMakeRect(206, 14, 190, 22);
+	self.searchModePopup.frame = NSZeroRect;
 
 	self.replaceField.hidden = tab != NppMacFindTabReplace;
 	self.filtersField.hidden = tab != NppMacFindTabFiles;
@@ -320,14 +355,12 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 	self.secondaryLabel.hidden = tab == NppMacFindTabFind || tab == NppMacFindTabMark;
 	self.directoryLabel.hidden = tab != NppMacFindTabFiles;
 	if (tab == NppMacFindTabFiles) {
-		self.matchCaseCheckbox.frame = NSMakeRect(220, 222, 190, 24);
-		self.wholeWordCheckbox.frame = NSMakeRect(18, 222, 190, 24);
-		self.dotMatchesNewlineCheckbox.frame = NSMakeRect(220, 198, 180, 24);
+		self.matchCaseCheckbox.frame = NSMakeRect(rightOptionX, optionTop - 24, 190, 22);
+		self.wholeWordCheckbox.frame = NSMakeRect(leftOptionX, optionTop - 24, 200, 22);
 	} else if (tab == NppMacFindTabMark) {
-		self.matchCaseCheckbox.frame = NSMakeRect(18, 198, 190, 24);
-		self.wholeWordCheckbox.frame = NSMakeRect(18, 222, 190, 24);
-		self.inSelectionCheckbox.frame = NSMakeRect(220, 222, 150, 24);
-		self.dotMatchesNewlineCheckbox.frame = NSMakeRect(220, 198, 180, 24);
+		self.wholeWordCheckbox.frame = NSMakeRect(leftOptionX, optionTop, 200, 22);
+		self.matchCaseCheckbox.frame = NSMakeRect(leftOptionX, optionTop - 24, 200, 22);
+		self.inSelectionCheckbox.frame = NSMakeRect(rightOptionX, optionTop, 160, 22);
 	}
 	self.secondaryLabel.stringValue = tab == NppMacFindTabReplace ? NppL("find.replaceWith") : NppL("find.filters");
 	if (tab == NppMacFindTabFiles) {
@@ -347,11 +380,9 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 		button.hidden = group != tab + 1;
 		NSInteger row = button.tag % 100;
 		BOOL longTitle = button.title.length > 18 || [button.title rangeOfString:@"\n"].location != NSNotFound;
-		button.frame = NSMakeRect(actionX, 354 - row * 46, actionWidth, longTitle ? 42 : 30);
-		if (button.tag == 302) {
-			button.frame = NSMakeRect(actionX, 278, actionWidth, 30);
-		}
+		button.frame = NSMakeRect(actionX, topY - row * 44, actionWidth, longTitle ? 38 : 30);
 	}
+	self.closeButton.frame = NSMakeRect(actionX, 10, actionWidth, 30);
 
 	self.panel.title = @[NppL("find.tab.find"), NppL("find.tab.replace"), NppL("find.tab.files"), NppL("find.tab.mark")][(NSUInteger)tab];
 	[self searchModeChanged:nil];
@@ -380,6 +411,24 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 	}
 }
 
+- (void)showResultsWithText:(NSString *)text {
+	self.resultsView.string = text ?: @"";
+	if (!self.ownerWindow) return;
+	if (!self.resultsPanel) {
+		self.resultsPanel = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, 700, 280)
+			styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable
+			backing:NSBackingStoreBuffered defer:NO];
+		self.resultsPanel.releasedWhenClosed = NO;
+		self.resultsPanel.minSize = NSMakeSize(480, 180);
+		self.resultsScrollView.frame = self.resultsPanel.contentView.bounds;
+		self.resultsScrollView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+		[self.resultsPanel.contentView addSubview:self.resultsScrollView];
+	}
+	self.resultsPanel.title = NppL("find.results.title");
+	if (!self.resultsPanel.visible) [self.resultsPanel center];
+	[self.resultsPanel makeKeyAndOrderFront:nil];
+}
+
 - (void)captureSelectionScope {
 	self.selectionScopeStart = [self.editor message:SCI_GETSELECTIONSTART];
 	self.selectionScopeEnd = [self.editor message:SCI_GETSELECTIONEND];
@@ -399,12 +448,26 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 	}
 }
 
+- (void)closePanelAction:(id)sender {
+	(void)sender;
+	[self.panel orderOut:nil];
+	if (self.ownerWindow) [self.ownerWindow makeKeyAndOrderFront:nil];
+}
+
 - (NppMacSearchMode)searchMode {
 	return (NppMacSearchMode)self.searchModePopup.indexOfSelectedItem;
 }
 
+- (void)searchModeRadioChanged:(NSButton *)sender {
+	[self.searchModePopup selectItemAtIndex:sender.tag];
+	[self searchModeChanged:sender];
+}
+
 - (void)searchModeChanged:(id)sender {
 	(void)sender;
+	self.normalModeRadio.state = self.searchMode == NppMacSearchModeNormal ? NSControlStateValueOn : NSControlStateValueOff;
+	self.extendedModeRadio.state = self.searchMode == NppMacSearchModeExtended ? NSControlStateValueOn : NSControlStateValueOff;
+	self.regexModeRadio.state = self.searchMode == NppMacSearchModeRegex ? NSControlStateValueOn : NSControlStateValueOff;
 	BOOL regex = self.searchMode == NppMacSearchModeRegex;
 	self.dotMatchesNewlineCheckbox.enabled = regex;
 	if (!regex) {
@@ -699,7 +762,7 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 		NSInteger line = [self.editor message:SCI_LINEFROMPOSITION wParam:range.location] + 1;
 		[results appendFormat:NppL("find.result.line"), (long)line, [self textForByteRange:range]];
 	}
-	self.resultsView.string = results;
+	[self showResultsWithText:results];
 	self.statusLabel.stringValue = [NSString stringWithFormat:NppL("find.status.currentResults"), (long)ranges.count];
 }
 
@@ -772,7 +835,7 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 		}
 		total += ranges.count;
 	}
-	self.resultsView.string = output;
+	[self showResultsWithText:output];
 	self.statusLabel.stringValue = [NSString stringWithFormat:NppL("find.status.openedResults"),
 		(long)total, (long)documents.count];
 }
@@ -848,7 +911,7 @@ typedef NS_ENUM(NSInteger, NppMacSearchMode) {
 		}
 		total += ranges.count;
 	}
-	self.resultsView.string = output;
+	[self showResultsWithText:output];
 	self.statusLabel.stringValue = [NSString stringWithFormat:NppL("find.status.fileResults"),
 		(long)total, (long)searched];
 }

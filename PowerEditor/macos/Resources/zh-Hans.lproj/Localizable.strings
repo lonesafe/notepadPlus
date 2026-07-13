@@ -229,6 +229,8 @@
 "find.action.markAll" = "标记全部";
 "find.action.clearMarks" = "清除所有标记";
 "find.action.copyMarked" = "复制标记文本";
+"find.action.close" = "关闭";
+"find.results.title" = "查找结果";
 "find.status.enter" = "请输入查找文本";
 "find.status.none" = "未找到匹配项";
 "find.status.found" = "已找到匹配项";

@@ -9,6 +9,7 @@
 #import "NppMacRecoveryStore.h"
 #import "NppMacSessionStore.h"
 #import "NppMacTabBarView.h"
+#import "NppMacToolBarView.h"
 
 #import <CommonCrypto/CommonDigest.h>
 #include <cstdint>
@@ -83,6 +84,7 @@ static const char bashKeywords[] =
 @property(nonatomic, strong) NppMacMarkdownPreviewController *markdownPreviewController;
 @property(nonatomic, strong) NppMacLanguageCatalog *languageCatalog;
 @property(nonatomic, strong) NppMacPreferencesController *preferencesController;
+@property(nonatomic, strong) NppMacToolBarView *toolBar;
 @property(nonatomic, strong) NppMacTabBarView *tabBar;
 @property(nonatomic, strong) NSTextField *statusBar;
 @property(nonatomic, strong) NSMutableArray<NppMacDocument *> *documents;
@@ -120,6 +122,7 @@ static const char bashKeywords[] =
 - (void)removeSnapshotForDocument:(NppMacDocument *)document;
 - (NSArray<NppMacFindDocumentSnapshot *> *)findDocumentSnapshots;
 - (void)replaceDocumentAtIndex:(NSUInteger)index withText:(NSString *)text;
+- (void)updateToolBar;
 - (NSMenu *)addSubmenu:(NSString *)title toMenu:(NSMenu *)menu;
 - (NSMenuItem *)addDisabledItem:(NSString *)title toMenu:(NSMenu *)menu;
 @end
@@ -149,6 +152,7 @@ static const char bashKeywords[] =
 		[weakSelf applyLexerForURL:weakSelf.currentDocument.url];
 		[weakSelf buildMainMenu];
 		[weakSelf.findPanelController reloadLocalization];
+		[weakSelf.toolBar reloadLocalization];
 		[weakSelf rebuildTabBar];
 		[weakSelf updateWindowTitle];
 	};
@@ -653,8 +657,9 @@ static const char bashKeywords[] =
 
 	NSRect contentBounds = self.window.contentView.bounds;
 	NSRect statusFrame = NSMakeRect(0, 0, contentBounds.size.width, 24);
-	NSRect editorFrame = NSMakeRect(0, 24, contentBounds.size.width, contentBounds.size.height - 56);
-	NSRect tabFrame = NSMakeRect(0, contentBounds.size.height - 32, contentBounds.size.width, 32);
+	NSRect editorFrame = NSMakeRect(0, 24, contentBounds.size.width, contentBounds.size.height - 94);
+	NSRect tabFrame = NSMakeRect(0, contentBounds.size.height - 70, contentBounds.size.width, 32);
+	NSRect toolBarFrame = NSMakeRect(0, contentBounds.size.height - 38, contentBounds.size.width, 38);
 
 	self.statusBar = [[NSTextField alloc] initWithFrame:statusFrame];
 	self.statusBar.autoresizingMask = NSViewWidthSizable | NSViewMaxYMargin;
@@ -672,6 +677,10 @@ static const char bashKeywords[] =
 	self.tabBar.autoresizingMask = NSViewWidthSizable | NSViewMinYMargin;
 	self.tabBar.delegate = self;
 	[self.window.contentView addSubview:self.tabBar];
+
+	self.toolBar = [[NppMacToolBarView alloc] initWithFrame:toolBarFrame target:self];
+	self.toolBar.autoresizingMask = NSViewWidthSizable | NSViewMinYMargin;
+	[self.window.contentView addSubview:self.toolBar];
 
 	self.editor = [[ScintillaView alloc] initWithFrame:editorFrame];
 	self.editor.delegate = self;
@@ -1432,10 +1441,12 @@ static const char bashKeywords[] =
 	BOOL show = [self.editor message:SCI_GETVIEWWS] == SCWS_INVISIBLE || ![self.editor message:SCI_GETVIEWEOL];
 	[self.editor message:SCI_SETVIEWWS wParam:show ? SCWS_VISIBLEALWAYS : SCWS_INVISIBLE];
 	[self.editor message:SCI_SETVIEWEOL wParam:show ? 1 : 0];
+	[self updateToolBar];
 }
 - (void)toggleIndentGuides:(id)sender {
 	(void)sender;
 	[self.editor message:SCI_SETINDENTATIONGUIDES wParam:[self.editor message:SCI_GETINDENTATIONGUIDES] == SC_IV_NONE ? SC_IV_LOOKBOTH : SC_IV_NONE];
+	[self updateToolBar];
 }
 - (void)zoomIn:(id)sender { (void)sender; [self.editor message:SCI_ZOOMIN]; }
 - (void)zoomOut:(id)sender { (void)sender; [self.editor message:SCI_ZOOMOUT]; }
@@ -1445,6 +1456,7 @@ static const char bashKeywords[] =
 	BOOL wrapLines = [self.editor message:SCI_GETWRAPMODE] == SC_WRAP_NONE;
 	[self.editor message:SCI_SETWRAPMODE wParam:wrapLines ? SC_WRAP_WORD : SC_WRAP_NONE];
 	[self.preferencesController updateWrapLines:wrapLines];
+	[self updateToolBar];
 }
 - (void)foldAll:(id)sender { (void)sender; [self.editor message:SCI_FOLDALL wParam:SC_FOLDACTION_CONTRACT]; }
 - (void)unfoldAll:(id)sender { (void)sender; [self.editor message:SCI_FOLDALL wParam:SC_FOLDACTION_EXPAND]; }
@@ -1573,9 +1585,9 @@ static const char bashKeywords[] =
 }
 
 - (void)startMacroRecording:(id)sender {
-	(void)sender; self.recordedMacro = [NSMutableArray array]; self.recordingMacro = YES; [self.editor message:SCI_STARTRECORD];
+	(void)sender; self.recordedMacro = [NSMutableArray array]; self.recordingMacro = YES; [self.editor message:SCI_STARTRECORD]; [self updateToolBar];
 }
-- (void)stopMacroRecording:(id)sender { (void)sender; [self.editor message:SCI_STOPRECORD]; self.recordingMacro = NO; }
+- (void)stopMacroRecording:(id)sender { (void)sender; [self.editor message:SCI_STOPRECORD]; self.recordingMacro = NO; [self updateToolBar]; }
 - (void)playbackMacroOnce {
 	for (NppMacMacroStep *step in self.recordedMacro) {
 		sptr_t lParam = step.text ? (sptr_t)step.text.UTF8String : step.lParam;
@@ -2266,6 +2278,38 @@ static const char bashKeywords[] =
 		(long)line, (long)column, (long)selectionCount, (long)characterCount, encodingName, eolName,
 		document.languageName ?: NppL("status.plainText"), dirtyText,
 		(unsigned long)index, (unsigned long)self.documents.count];
+	[self updateToolBar];
+}
+
+- (void)updateToolBar {
+	if (!self.toolBar || !self.editor) return;
+	BOOL hasDocument = self.currentDocument != nil;
+	BOOL readOnly = [self.editor message:SCI_GETREADONLY] != 0;
+	BOOL hasSelection = [self.editor message:SCI_GETSELECTIONSTART] != [self.editor message:SCI_GETSELECTIONEND];
+	BOOL anyDirty = NO;
+	for (NppMacDocument *document in self.documents) anyDirty = anyDirty || document.dirty;
+
+	[self.toolBar setButtonEnabled:hasDocument && self.currentDocument.dirty forAction:@selector(saveDocument:)];
+	[self.toolBar setButtonEnabled:anyDirty forAction:@selector(saveAllDocuments:)];
+	[self.toolBar setButtonEnabled:hasDocument forAction:@selector(closeDocument:)];
+	[self.toolBar setButtonEnabled:hasDocument forAction:@selector(closeAllDocuments:)];
+	[self.toolBar setButtonEnabled:hasDocument forAction:@selector(printDocument:)];
+	[self.toolBar setButtonEnabled:hasSelection && !readOnly forAction:@selector(cut:)];
+	[self.toolBar setButtonEnabled:hasSelection forAction:@selector(copy:)];
+	[self.toolBar setButtonEnabled:!readOnly && [self.editor message:SCI_CANPASTE] != 0 forAction:@selector(paste:)];
+	[self.toolBar setButtonEnabled:[self.editor message:SCI_CANUNDO] != 0 forAction:@selector(undo:)];
+	[self.toolBar setButtonEnabled:[self.editor message:SCI_CANREDO] != 0 forAction:@selector(redo:)];
+	[self.toolBar setButtonEnabled:hasDocument forAction:@selector(findText:)];
+	[self.toolBar setButtonEnabled:hasDocument forAction:@selector(replaceText:)];
+	[self.toolBar setButtonEnabled:!self.recordingMacro forAction:@selector(startMacroRecording:)];
+	[self.toolBar setButtonEnabled:self.recordingMacro forAction:@selector(stopMacroRecording:)];
+	[self.toolBar setButtonEnabled:!self.recordingMacro && self.recordedMacro.count > 0 forAction:@selector(playbackMacro:)];
+	[self.toolBar setButtonEnabled:!self.recordingMacro && self.recordedMacro.count > 0 forAction:@selector(runMacroMultipleTimes:)];
+
+	[self.toolBar setButtonOn:[self.editor message:SCI_GETWRAPMODE] != SC_WRAP_NONE forAction:@selector(toggleWordWrap:)];
+	BOOL showsAllCharacters = [self.editor message:SCI_GETVIEWWS] != SCWS_INVISIBLE && [self.editor message:SCI_GETVIEWEOL] != 0;
+	[self.toolBar setButtonOn:showsAllCharacters forAction:@selector(toggleAllCharacters:)];
+	[self.toolBar setButtonOn:[self.editor message:SCI_GETINDENTATIONGUIDES] != SC_IV_NONE forAction:@selector(toggleIndentGuides:)];
 }
 
 - (void)applyLexerForURL:(NSURL *)url {

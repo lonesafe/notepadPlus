@@ -30,8 +30,10 @@ LEXILLA_OBJS := $(addprefix $(LEXILLA_OBJ_DIR)/,Lexilla.o $(LEXILLA_LEXLIB_OBJS)
 SRC := src/main.mm src/NppMacAppDelegate.mm src/NppMacCodeFormatter.mm src/NppMacFileDropView.mm src/NppMacFindPanelController.mm \
 	src/NppMacLanguageCatalog.mm src/NppMacLocalization.mm src/NppMacMarkdownPreviewController.mm \
 	src/NppMacMarkdownRenderer.mm src/NppMacPreferencesController.mm src/NppMacRecoveryStore.mm \
-	src/NppMacSessionStore.mm src/NppMacTabBarView.mm
+	src/NppMacSessionStore.mm src/NppMacTabBarView.mm src/NppMacToolBarView.mm
 BIN := $(MACOS_DIR)/$(APP_NAME)
+TOOLBAR_ICONS := new open save saveall close closeall print cut copy paste undo redo find findrep zoomIn zoomOut \
+	wrap allChars indentGuide startrecord stoprecord playrecord playrecord_m
 FIND_TEST_BIN := $(BUILD_DIR)/tests/NppMacFindPanelTests
 SESSION_TEST_BIN := $(BUILD_DIR)/tests/NppMacSessionStoreTests
 SESSION_RESTORE_TEST_BIN := $(BUILD_DIR)/tests/NppMacSessionRestoreTests
@@ -40,6 +42,7 @@ RECOVERY_TEST_BIN := $(BUILD_DIR)/tests/NppMacRecoveryStoreTests
 LANGUAGE_TEST_BIN := $(BUILD_DIR)/tests/NppMacLanguageCatalogTests
 LEXILLA_TEST_BIN := $(BUILD_DIR)/tests/NppMacLexillaTests
 TAB_BAR_TEST_BIN := $(BUILD_DIR)/tests/NppMacTabBarTests
+TOOL_BAR_TEST_BIN := $(BUILD_DIR)/tests/NppMacToolBarTests
 LOCALIZATION_TEST_BIN := $(BUILD_DIR)/tests/NppMacLocalizationTests
 FORMATTER_TEST_BIN := $(BUILD_DIR)/tests/NppMacCodeFormatterTests
 MARKDOWN_TEST_BIN := $(BUILD_DIR)/tests/NppMacMarkdownRendererTests
@@ -111,6 +114,10 @@ $(BIN): $(SRC) scintilla lexilla
 	sh scripts/extract-ico-png.sh $(ROOT_DIR)/PowerEditor/src/icons/dark/tabbar/closeTabButton_hoverIn.ico $(RESOURCES_DIR)/tab-dark-close-hover.png
 	sh scripts/extract-ico-png.sh $(ROOT_DIR)/PowerEditor/src/icons/dark/tabbar/closeTabButton_hoverOnTab.ico $(RESOURCES_DIR)/tab-dark-close-tab-hover.png
 	sh scripts/extract-ico-png.sh $(ROOT_DIR)/PowerEditor/src/icons/dark/tabbar/closeTabButton_push.ico $(RESOURCES_DIR)/tab-dark-close-pressed.png
+	@for icon in $(TOOLBAR_ICONS); do \
+		sh scripts/extract-ico-png.sh $(ROOT_DIR)/PowerEditor/src/icons/light/toolbar/filled/$${icon}_off.ico \
+			$(RESOURCES_DIR)/toolbar-$${icon}.png; \
+	done
 	rm -rf $(FRAMEWORKS_DIR)/Scintilla.framework
 	cp -R $(SCINTILLA_FRAMEWORK) $(FRAMEWORKS_DIR)/
 	cp $(LEXILLA_DYLIB) $(FRAMEWORKS_DIR)/
@@ -136,12 +143,12 @@ $(SESSION_TEST_BIN): tests/NppMacSessionStoreTests.mm src/NppMacSessionStore.mm
 $(SESSION_RESTORE_TEST_BIN): tests/NppMacSessionRestoreTests.mm src/NppMacAppDelegate.mm \
 		src/NppMacCodeFormatter.mm src/NppMacFileDropView.mm src/NppMacFindPanelController.mm src/NppMacLanguageCatalog.mm src/NppMacMarkdownPreviewController.mm \
 		src/NppMacMarkdownRenderer.mm src/NppMacPreferencesController.mm src/NppMacRecoveryStore.mm \
-		src/NppMacLocalization.mm src/NppMacSessionStore.mm src/NppMacTabBarView.mm scintilla
+		src/NppMacLocalization.mm src/NppMacSessionStore.mm src/NppMacTabBarView.mm src/NppMacToolBarView.mm scintilla
 	mkdir -p $(dir $(SESSION_RESTORE_TEST_BIN))
 	$(CXX) $(CXXFLAGS) tests/NppMacSessionRestoreTests.mm src/NppMacAppDelegate.mm \
 		src/NppMacCodeFormatter.mm src/NppMacFileDropView.mm src/NppMacFindPanelController.mm src/NppMacLanguageCatalog.mm src/NppMacMarkdownPreviewController.mm \
 		src/NppMacMarkdownRenderer.mm src/NppMacPreferencesController.mm src/NppMacRecoveryStore.mm \
-		src/NppMacLocalization.mm src/NppMacSessionStore.mm src/NppMacTabBarView.mm \
+		src/NppMacLocalization.mm src/NppMacSessionStore.mm src/NppMacTabBarView.mm src/NppMacToolBarView.mm \
 		-F$(SCINTILLA_PRODUCTS) -framework Cocoa -framework WebKit -framework Scintilla \
 		-Wl,-rpath,$(abspath $(SCINTILLA_PRODUCTS)) -o $(SESSION_RESTORE_TEST_BIN)
 
@@ -171,6 +178,11 @@ $(TAB_BAR_TEST_BIN): tests/NppMacTabBarTests.mm src/NppMacTabBarView.mm src/NppM
 	$(CXX) $(CXXFLAGS) tests/NppMacTabBarTests.mm src/NppMacTabBarView.mm src/NppMacLocalization.mm \
 		-framework Cocoa -o $(TAB_BAR_TEST_BIN)
 
+$(TOOL_BAR_TEST_BIN): tests/NppMacToolBarTests.mm src/NppMacToolBarView.mm src/NppMacLocalization.mm
+	mkdir -p $(dir $(TOOL_BAR_TEST_BIN))
+	$(CXX) $(CXXFLAGS) tests/NppMacToolBarTests.mm src/NppMacToolBarView.mm src/NppMacLocalization.mm \
+		-framework Cocoa -o $(TOOL_BAR_TEST_BIN)
+
 $(LOCALIZATION_TEST_BIN): tests/NppMacLocalizationTests.mm src/NppMacLocalization.mm
 	mkdir -p $(dir $(LOCALIZATION_TEST_BIN))
 	$(CXX) $(CXXFLAGS) tests/NppMacLocalizationTests.mm src/NppMacLocalization.mm \
@@ -198,7 +210,7 @@ $(FILE_DROP_TEST_BIN): tests/NppMacFileDropTests.mm src/NppMacFileDropView.mm
 
 test: $(FIND_TEST_BIN) $(SESSION_TEST_BIN) $(SESSION_RESTORE_TEST_BIN) $(PREFERENCES_TEST_BIN) \
 		$(RECOVERY_TEST_BIN) $(LANGUAGE_TEST_BIN) $(LEXILLA_TEST_BIN) $(TAB_BAR_TEST_BIN) $(LOCALIZATION_TEST_BIN) \
-		$(FORMATTER_TEST_BIN) $(MARKDOWN_TEST_BIN) $(MARKDOWN_PREVIEW_TEST_BIN) $(FILE_DROP_TEST_BIN)
+		$(TOOL_BAR_TEST_BIN) $(FORMATTER_TEST_BIN) $(MARKDOWN_TEST_BIN) $(MARKDOWN_PREVIEW_TEST_BIN) $(FILE_DROP_TEST_BIN)
 	$(FIND_TEST_BIN)
 	$(SESSION_TEST_BIN)
 	$(SESSION_RESTORE_TEST_BIN)
@@ -207,6 +219,7 @@ test: $(FIND_TEST_BIN) $(SESSION_TEST_BIN) $(SESSION_RESTORE_TEST_BIN) $(PREFERE
 	$(LANGUAGE_TEST_BIN) $(ROOT_DIR)/PowerEditor/src/langs.model.xml
 	$(LEXILLA_TEST_BIN) $(abspath $(LEXILLA_DYLIB))
 	$(TAB_BAR_TEST_BIN)
+	$(TOOL_BAR_TEST_BIN)
 	$(LOCALIZATION_TEST_BIN)
 	$(FORMATTER_TEST_BIN)
 	$(MARKDOWN_TEST_BIN)
